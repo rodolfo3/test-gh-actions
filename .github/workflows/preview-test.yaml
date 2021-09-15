@@ -1,0 +1,14 @@
+name: Preview Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-preview-nw-smb:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout the current branch
+      - uses: actions/checkout@v2
+
+      - name: echo
+        run: echo ${GITHUB_REF#refs/*/}
