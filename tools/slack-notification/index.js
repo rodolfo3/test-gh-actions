@@ -4,12 +4,19 @@ const fetch = require("node-fetch");
 const github = require("@actions/github");
 
 const getNeedsResult = () => {
-  const result = JSON.parse(process.env.NEEDS_RESULT);
-  const data = YAML.parse(
-    fs.readFileSync(github.context.payload.workflow, "utf-8")
-  );
-  const keys = data.jobs[process.env.GITHUB_JOB].needs;
-  return keys.reduce((acc, key, idx) => ({ ...acc, [key]: result[idx] }), {});
+  try {
+    const data = JSON.parse(process.env.NEEDS_DATA);
+    return Object.keys(data).reduce(
+      (acc, i) => ({
+        ...acc,
+        [i]: data[i].result,
+      }),
+      {},
+    )
+  } catch (err) {
+    console.error(err)
+    return {}
+  }
 };
 
 const getKeywordArgs = () => {

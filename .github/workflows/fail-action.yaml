@@ -59,4 +59,4 @@ jobs:
           '
         env:
           SLACK_NOTIFICATION_WEBHOOK: ${{ secrets.SLACK_NOTIFICATION_WEBHOOK }}
-          NEEDS_RESULT: ${{ toJson(needs.*.result) }}
+          NEEDS_DATA: ${{ toJson(needs) }}
