@@ -12,6 +12,15 @@ jobs:
       - name: success
         run: exit 0
 
+  test:
+    runs-on: ubuntu-latest
+    needs: [always-success]
+    steps:
+      - name: echo
+        run: echo $STEPS_CONTEXT
+    env:
+      STEPS_CONTEXT: ${{ toJson(needs) }}
+
   run-if-failed:
     runs-on: ubuntu-latest
     needs: [always-success]
