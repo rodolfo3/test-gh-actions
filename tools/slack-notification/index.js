@@ -1,9 +1,9 @@
-const fs = require("fs");
-const YAML = require("yaml");
 const fetch = require("node-fetch");
 const github = require("@actions/github");
 
 const getNeedsResult = () => {
+  // returns an object with all results
+  // { "job": "result" }
   try {
     const data = JSON.parse(process.env.NEEDS_DATA);
     return Object.keys(data).reduce(
@@ -22,6 +22,7 @@ const getNeedsResult = () => {
 const getKeywordArgs = () => {
   // --json='{"prop": "value"}'
   const args = process.argv.slice(2);
+  // TODO this is checking only the first one - a good practice could be check it all
   const arg = args[0];
   if (!arg || !arg.startsWith("--json=")) {
     return {};
@@ -30,6 +31,7 @@ const getKeywordArgs = () => {
 };
 
 const notify = async (slackMessage) => {
+  // sends the message to slack
   const slack_webhook_url = process.env.SLACK_NOTIFICATION_WEBHOOK;
   return fetch(slack_webhook_url, {
     method: "POST",
@@ -39,6 +41,8 @@ const notify = async (slackMessage) => {
 };
 
 const buildNeededBlocks = () => {
+  // build the message with the "needed" results
+  // to show on slack
   const needed = getNeedsResult();
   const icons = {
     success: ":white_check_mark:",
@@ -46,21 +50,32 @@ const buildNeededBlocks = () => {
     cancelled: ":x:",
     skipped: ":kangaroo:",
   };
-  return [
-    {
-      type: "section",
-      text: {
-        type: "mrkdwn",
-        text:
-          Object.keys(needed)
-            .map((k) => `${icons[needed[k]] || needed[k]} - ${k}`)
-            .join("\n\n") || "N/A",
-      },
-    },
-  ];
+
+  return Object.keys(needed).map(
+    key => ({
+      "type": "context",
+      "elements": [
+        {
+          type: "mrkdwn",
+          text: icons[needed[key]]
+        },
+        {
+          type: "mrkdwn",
+          text: key,
+        },
+        {
+          type: "mrkdwn",
+          text: needed[key],
+        },
+      ]
+    })
+  );
 };
 
 const buildHeader = () => {
+  // build a header, using json args data, with title and text
+  // title is a plain text
+  // text could use markdown and can use "@" to mention ppl
   const kwargs = getKeywordArgs();
   const text = kwargs.text || "GitHub action notification";
   const title = kwargs.title || "GitHub action notification";
@@ -85,6 +100,7 @@ const buildHeader = () => {
 };
 
 const buildFooter = () => {
+  // build a "footer" data, with commit and links to the repository and action
   const { runNumber, runId, workflow, sha, ref, actor } = github.context;
   const { owner, repo } = github.context.repo;
 
@@ -129,6 +145,7 @@ const buildFooter = () => {
 };
 
 const buildMessage = () => {
+  // generate the full message, with header, dependencies and footer
   const kwargs = getKeywordArgs();
   const text = kwargs.text || "GitHub action notification";
 
@@ -148,11 +165,17 @@ const buildMessage = () => {
   };
 };
 
+// the "main" function, read args and send the message
 (async () => {
-  console.log("==DEBUG==");
-  console.log(JSON.stringify(github, null, 2));
-  console.log("==");
+  const msg = buildMessage();
 
-  const result = await notify(buildMessage());
-  console.log(await result.text());
+  // debug: show the message we are sending to slack
+  console.log(JSON.stringify({ msg }, null, 2))
+
+  const result = await notify(msg);
+
+  // debug: show the response from slack
+  console.log({
+    response: await result.text(),
+  });
 })();

@@ -14,6 +14,7 @@ jobs:
         run: exit 1
 
   always-fail:
+    needs: [pre-always-success]
     runs-on: ubuntu-latest
     steps:
       - name: fail
@@ -25,51 +26,20 @@ jobs:
       - name: success
         run: exit 0
 
-  run-if-failed:
+  pre-always-success:
     runs-on: ubuntu-latest
-    needs: [always-fail, always-success, never-run]
-    if: ${{ failure() }}
     steps:
-      # Checkout the current branch
-      - uses: actions/checkout@v2
+      - name: success
+        run: exit 0
 
-      - name: Use Node.js
-        uses: actions/setup-node@v1
-        with:
-          node-version: "14.17"
+  notify-slack-if-failed:
+    needs: [always-fail, always-success, never-run, pre-always-success]
+    if: ${{ failure() }}
+    uses: rodolfo3/test-gh-actions/.github/workflows/notify_slack.yaml@main
+    with:
+      title: "GitHub Action failed!"
+      text: "The build or a check failed on the action.\n@channel, check it!"
+      needs_data: ${{ toJson(needs) }}
+    secrets:
+      SLACK_NOTIFICATION_WEBHOOK: ${{ secrets.SLACK_NOTIFICATION_WEBHOOK }}
 
-      - name: Cache node modules and yarn cache
-        id: cache-node-modules
-        uses: actions/cache@v2
-        with:
-          path: |
-            node_modules
-            */*/node_modules
-            ~/.cache/yarn
-            ~/.npm
-          key: ${{ runner.os }}-${{ hashFiles('**/yarn.lock', '**/package.json') }}
-
-      # Install dependencies usign yarn.
-      # Only runs if the Cache node modules is not hit (no changes made in dependencies).
-      - name: Install dependencies
-        if: steps.cache-node-modules-cypress.outputs.cache-hit != 'true'
-        working-directory: ./
-        run: yarn --frozen-lockfile
-
-      - name: yarn cache dir
-        run: yarn cache dir
-
-      - name: debug env
-        run: env
-
-      - name: notify slack
-        run: |
-          node --unhandled-rejections=strict ./tools/slack-notification --json='
-            {
-              "title": "GitHub Action failded!",
-              "text": "The build or the check failed for one or more steps.\n@channel check it, @please"
-            }
-          '
-        env:
-          SLACK_NOTIFICATION_WEBHOOK: ${{ secrets.SLACK_NOTIFICATION_WEBHOOK }}
-          NEEDS_RESULT: ${{ toJson(needs.*.result) }}

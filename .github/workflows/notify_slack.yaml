@@ -1,0 +1,66 @@
+name: Send a notification to the slack channel
+
+on:
+  workflow_call:
+    inputs:
+      title:
+        required: true
+        type: string
+      text:
+        required: true
+        type: string
+      needs_data:
+        required: true
+        type: string
+    secrets:
+      SLACK_NOTIFICATION_WEBHOOK:
+        required: true
+
+jobs:
+  notify-slack:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout the current branch
+      - uses: actions/checkout@v2
+
+      - name: Use Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: "14.17"
+
+      - name: Cache node modules and yarn cache
+        id: cache-node-modules
+        uses: actions/cache@v2
+        with:
+          path: |
+            node_modules
+            */*/node_modules
+            ~/.cache/yarn
+            ~/.npm
+          key: ${{ runner.os }}-${{ hashFiles('**/yarn.lock', '**/package.json') }}
+
+      # Install dependencies usign yarn.
+      # Only runs if the Cache node modules is not hit (no changes made in dependencies).
+      - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        working-directory: ./
+        run: yarn --frozen-lockfile
+
+      - name: yarn cache dir
+        run: yarn cache dir
+
+      - name: debug env
+        run: env
+
+      - name: notify slack
+        run: |
+          node --unhandled-rejections=strict ./tools/slack-notification --json='
+            {
+              "title": ${{ toJSon(inputs.title) }},
+              "text": ${{ toJSon(inputs.text) }}
+            }
+          '
+        env:
+          SLACK_NOTIFICATION_WEBHOOK: ${{ secrets.SLACK_NOTIFICATION_WEBHOOK }}
+          NEEDS_DATA: ${{ inputs.needs_data }}
+
