@@ -8,12 +8,12 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      GH_REPO: ${{ env.GITHUB_REPOSITORY }}
     steps:
       - name: env
         run: env
       - name: List and add comment
         run: |
+          export GH_REPO=${{ env.GITHUB_REPOSITORY }}
           for i in `gh pr list --jq '.[] | select(.labels[].name == "experiment")' --json 'labels,number' | jq '.number'`
           do
             echo gh pr comment $i --body '/rebase'
