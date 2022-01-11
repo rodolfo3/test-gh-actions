@@ -8,6 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ env.GITHUB_REPOSITORY }}
     steps:
       - name: env
         run: env
