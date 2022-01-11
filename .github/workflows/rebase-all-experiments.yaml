@@ -1,0 +1,16 @@
+name: Comment on all experiment branches
+on:
+  workflow_dispatch:
+
+jobs:
+  comment:
+    name: Add a comment
+    runs-on: ubuntu-latest
+    steps:
+      - name: List and add comment
+        run: |
+          for i in `gh pr list --jq '.[] | select(.labels[].name == "experiment")' --json 'labels,number' | jq '.number'`
+          do
+            echo gh pr comment $i --body '/rebase'
+            gh pr comment $i --body '/rebase'
+          done
