@@ -9,6 +9,8 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      - name: env
+        run: env
       - name: List and add comment
         run: |
           for i in `gh pr list --jq '.[] | select(.labels[].name == "experiment")' --json 'labels,number' | jq '.number'`
