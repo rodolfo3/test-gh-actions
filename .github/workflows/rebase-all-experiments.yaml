@@ -13,7 +13,9 @@ jobs:
         run: env
       - name: List and add comment
         run: |
-          export GH_REPO=${{ env.GITHUB_REPOSITORY }}
+          env
+          echo
+          export GH_REPO=$GITHUB_REPOSITORY
           for i in `gh pr list --jq '.[] | select(.labels[].name == "experiment")' --json 'labels,number' | jq '.number'`
           do
             echo gh pr comment $i --body '/rebase'
