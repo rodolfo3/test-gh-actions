@@ -6,6 +6,8 @@ jobs:
   comment:
     name: Add a comment
     runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: List and add comment
         run: |
