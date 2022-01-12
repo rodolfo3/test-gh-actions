@@ -17,7 +17,7 @@ jobs:
           fetch-depth: 0 # otherwise, you will fail to push refs to dest repo
       - name: List and add comment
         run: |
-          env
+          ERROR=0
           set +e # avoid stoping on errors
 
           git config --global user.email "tech@fundera.com"
@@ -47,8 +47,11 @@ jobs:
               git rebase --abort
               gh pr edit $PR --add-label "rebase required"
               gh pr comment $PR --body 'Tried and failed to rebase.'
+              ERROR=1
             fi
 
             echo
             echo
           done
+
+          exit $ERROR
