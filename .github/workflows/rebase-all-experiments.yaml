@@ -41,7 +41,7 @@ jobs:
             if [ "$?" == "0" ]
             then
               echo 'Success. Forcing push'
-              # git push -f
+              git push -f
             else
               echo 'Error. Aborting'
               git rebase --abort
