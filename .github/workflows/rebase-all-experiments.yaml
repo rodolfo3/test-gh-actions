@@ -18,6 +18,7 @@ jobs:
       - name: List and add comment
         run: |
           env
+          set +e # avoid stoping on errors
           export GH_REPO=$GITHUB_REPOSITORY
           TO_REBASE=`gh pr list --jq '.[] | select(.labels[].name == "'${TAG_NAME}'")' --json 'labels,number,baseRefName,headRefName' | jq -r '. | {number,baseRefName,headRefName} | join(";")'`
 
