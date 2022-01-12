@@ -1,4 +1,4 @@
-name: Comment on all experiment branches
+name: Rebase all experiment PRs
 on:
   workflow_dispatch:
 
@@ -8,16 +8,42 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TAG_NAME: experiment
     steps:
-      - name: env
-        run: env
+      - name: Checkout the latest code
+        uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0 # otherwise, you will fail to push refs to dest repo
       - name: List and add comment
         run: |
           env
-          echo
           export GH_REPO=$GITHUB_REPOSITORY
-          for i in `gh pr list --jq '.[] | select(.labels[].name == "experiment")' --json 'labels,number' | jq '.number'`
+          TO_REBASE=`gh pr list --jq '.[] | select(.labels[].name == "'${TAG_NAME}'")' --json 'labels,number,baseRefName,headRefName' | jq -r '. | {number,baseRefName,headRefName} | join(";")'`
+
+          for i in $TO_REBASE
           do
-            echo gh pr comment $i --body '/rebase'
-            gh pr comment $i --body '/rebase'
+            IFS=';' read -a data <<< $i
+            PR=${data[0]}
+            BASE=${data[1]}
+            HEAD=${data[2]}
+
+            echo "Rebasing PR #${PR} (${HEAD} on ${BASE})"
+
+            git checkout $HEAD
+            git rebase origin/$BASE
+
+            if [ "$?" == "0" ]
+            then
+              echo 'Success. Forcing push'
+              # git push -f
+            else
+              echo 'Error. Aborting'
+              git rebase --abort
+              gh pr edit $PR --add-label "rebase required"
+              gh pr comment $PR --body 'Tried and failed to rebase.'
+            fi
+
+            echo
+            echo
           done
