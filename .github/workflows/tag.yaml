@@ -19,6 +19,11 @@ jobs:
           set -x
           TAG_PREFIX=release/`date +%Y-%m-%d`
 
+          git config --global user.email "tech@fundera.com"
+          git config --global user.name "Github Action"
+
+          git fetch origin
+
           function buildtag()
           {
             TAG=$TAG_PREFIX
@@ -40,9 +45,5 @@ jobs:
 
           TAG=$(buildtag)
 
-          git config --global user.email "tech@fundera.com"
-          git config --global user.name "Github Action"
-
-          git fetch origin
           git tag $TAG
           git push origin $TAG
