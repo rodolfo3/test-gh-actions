@@ -7,6 +7,10 @@ jobs:
   add-git-tag:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout the latest code
+        uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Tag deploy on git
         working-directory: ./
         env:
