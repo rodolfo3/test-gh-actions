@@ -16,6 +16,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -x
           TAG_PREFIX=release/`date +%Y-%m-%d`
 
           function buildtag()
