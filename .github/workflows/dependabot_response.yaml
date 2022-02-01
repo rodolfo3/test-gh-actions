@@ -1,0 +1,47 @@
+name: Dependabot response
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review]
+  workflow_run:
+    workflows: ["Dependabot PR Check"]
+    types:
+      - completed
+  workflow_dispatch:
+
+jobs:
+  build-preview-nw-smb:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_run' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.draft == false)
+
+    steps:
+      # Cancel previous runs from other actions in the same branch
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.7.0
+        with:
+          access_token: ${{ github.token }}
+
+      # Generate the alias for the build (for out ticket PRs)
+      - name: Set alias
+        if: github.event_name != 'workflow_run'
+        run: |
+          env
+          echo "alias=preview-$(if [[ "$BRANCH_NAME" =~ [0-9] ]]; then echo "${BRANCH_NAME//[!0-9]/}"; else echo "${BRANCH_NAME//\//-}"; fi)" >> $GITHUB_ENV
+        env:
+          BRANCH_NAME: ${{ env.branch_name }}
+
+      # Generate the alias for the build (dependabot PRs)
+      - name: Set alias (dependabot)
+        if: github.event_name == 'workflow_run'
+        run: |
+          env
+          PR_NUMBER=`gh pr list --head="${BRANCH_NAME}" --json number | jq '.[0].number'`
+          echo "alias=dependabot-${PR_NUMBER}"
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+
+      # Netlify deploy. It includes the branch name in the message param.
+      - name: Use alias
+        run: echo $ALIAS
+        env:
+          BRANCH_NAME: ${{ env.branch_name }}
