@@ -55,13 +55,16 @@ jobs:
           set -x
           set -e
           PR_NUMBER=`gh pr list --head="${{ env.branch_name }}" --json number | jq '.[0].number'`
+          echo $PR_NUMBER
           echo "alias=dependabot-${PR_NUMBER}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BRANCH_NAME: ${{ env.branch_name }}
 
       # Netlify deploy. It includes the branch name in the message param.
       - name: Use alias
-        run: echo $ALIAS
-        # env:
-        #   ALIAS: ${{ env.alias }}
+        run: |
+          env
+          echo ${{ env.alias }}
+          echo $ALIAS
+        env:
+          ALIAS: ${{ env.alias }}
