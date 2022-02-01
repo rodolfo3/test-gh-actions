@@ -56,7 +56,7 @@ jobs:
           set -e
           PR_NUMBER=`gh pr list --head="${{ env.branch_name }}" --json number | jq '.[0].number'`
           echo $PR_NUMBER
-          echo "alias=dependabot-${PR_NUMBER}"
+          echo "alias=dependabot-${PR_NUMBER}" >> $GITHUB_ENV
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
