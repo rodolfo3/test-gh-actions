@@ -22,6 +22,11 @@ jobs:
         with:
           access_token: ${{ github.token }}
 
+      - name: Checkout the latest code
+        uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       # Get and expose the branch name in the branch_name GH variable to be used in other steps
       - name: Set branch name if workflow dispatch
         id: branch_name_from_workflow_dispatch
