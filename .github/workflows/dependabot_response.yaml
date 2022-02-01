@@ -3,16 +3,17 @@ name: Dependabot response
 on:
   pull_request:
     types: [opened, reopened, ready_for_review]
-  workflow_run:
-    workflows: ["Dependabot PR Check"]
-    types:
-      - completed
   workflow_dispatch:
+    inputs:
+      usePrNumber:
+        description: 'Use PR number instead of branch name'
+        required: true
+        default: 'true'
 
 jobs:
   build-preview-nw-smb:
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_run' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.draft == false)
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.draft == false)
 
     steps:
       # Cancel previous runs from other actions in the same branch
@@ -21,9 +22,21 @@ jobs:
         with:
           access_token: ${{ github.token }}
 
+      # Get and expose the branch name in the branch_name GH variable to be used in other steps
+      - name: Set branch name if workflow dispatch
+        id: branch_name_from_workflow_dispatch
+        if: github.event_name == 'workflow_dispatch'
+        run: echo "branch_name=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+
+      # Get and expose the branch name in the branch_name GH variable to be used in other steps
+      - name: Set branch name if pull request
+        id: branch_name_from_pull_request
+        if: github.event_name == 'pull_request'
+        run: echo "branch_name=${GITHUB_HEAD_REF}" >> $GITHUB_ENV
+
       # Generate the alias for the build (for out ticket PRs)
       - name: Set alias
-        if: github.event_name != 'workflow_run'
+        if: github.event.inputs.usePrNumber != 'true'
         run: |
           env
           echo "alias=preview-$(if [[ "$BRANCH_NAME" =~ [0-9] ]]; then echo "${BRANCH_NAME//[!0-9]/}"; else echo "${BRANCH_NAME//\//-}"; fi)" >> $GITHUB_ENV
@@ -32,7 +45,7 @@ jobs:
 
       # Generate the alias for the build (dependabot PRs)
       - name: Set alias (dependabot)
-        if: github.event_name == 'workflow_run'
+        if: github.event.inputs.usePrNumber == 'true'
         run: |
           env
           PR_NUMBER=`gh pr list --head="${BRANCH_NAME}" --json number | jq '.[0].number'`
