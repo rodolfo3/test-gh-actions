@@ -14,3 +14,11 @@ jobs:
     steps:
       - run: env
 
+      - name: Add comment
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR=`gh pr list --head="${{ needs.preview.outputs.branch_name }}" --json number | jq '.[0].number'`
+          gh pr comment $PR --body "Check the preview!"
+          gh pr comment $PR --body "'`env`'"
+
